@@ -142,16 +142,18 @@ default:  begin
 endcase 
 
 case(aluop)
-2'b00: op=4'b0000;
+2'b00: op=4'b0000; //add
 
-2'b01: op=4'b0001;
+2'b01: op=4'b0001; //SUB
 
-2'b10: case(funct3)
+2'b10: case(funct3) // R-TYPE
    3'b000: begin
-         if(funct7 == 0)
-          op=4'b0000;
+         if(opcode==7'b0110011 && funct7 == 0)
+          op=4'b0000;//ADD r
+         else if(opcode==7'b0010011)
+          op=4'b0000;//ADD i
          else 
-           op=4'b0001;
+          op=4'b0001;//SUB r
          end
     3'b111: op=4'b0010;
     3'b110: op=4'b0011;
