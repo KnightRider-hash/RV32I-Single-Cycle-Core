@@ -12,29 +12,27 @@ This core follows a classic single-cycle architecture. Every instruction is fetc
 * **Target Hardware:** Gowin Tang Primer 25K (FPGA)
 
 ### Supported Instructions
-The current Control Unit and Datapath support the following operations:
-* **Arithmetic/Logic:** `ADD`, `ADDI`
-* **Memory Access:** `LW` (Load Word), `SW` (Store Word)
-* **Control Flow:** `BEQ` (Branch if Equal)
-
-## 📂 Repository Structure
-* `/Src`: Core Verilog modules (ALU, Control Unit, Register File, PC, Data RAM).
-* `/Sim`: Testbenches and hexadecimal instruction files for behavioral simulation.
-* `/Docs`: Architecture diagrams and waveform verifications.
+The current Control Unit and Datapath support the complete RV32I base integer instruction set (37 instructions):
+* **R-Type (Register-Register):** `add`, `sub`, `sll`, `slt`, `sltu`, `xor`, `srl`, `sra`, `or`, `and`
+* **I-Type (Register-Immediate):** `addi`, `slti`, `sltiu`, `xori`, `ori`, `andi`, `slli`, `srli`, `srai`
+* **Load/Store Memory:** `lb`, `lh`, `lw`, `lbu`, `lhu`, `sb`, `sh`, `sw`
+* **B-Type (Control Flow):** `beq`, `bne`, `blt`, `bge`, `bltu`, `bgeu`
+* **J-Type & U-Type (Jumps & Upper Immediates):** `jal`, `jalr`, `lui`, `auipc`
 
 ## 🚀 Simulation & Verification
-The CPU has been strictly verified using Vivado Behavioral Simulation. The test suite includes self-checking testbenches that validate register states, memory read/writes, and branch logic.
+The CPU has been strictly verified using Vivado Behavioral Simulation. The verification environment utilizes a self-checking assembly program (`test.S`) that validates all 37 instructions sequentially. If an arithmetic or branching error occurs, the processor traps and reports the failed test number via a status register.
 
 ![Waveform Screenshot](./Docs/waveform.png) 
 
-**Example Console Output (Arithmetic Validation):**
+**Example Console Output (Self-Checking Testbench):**
 ```text
 ==================================================
-          RISC-V CPU SIMULATION REPORT            
+         RISC-V CPU SIMULATION REPORT             
 ==================================================
- TIME         : 110 ns
- Instruction 1: ADDI x11, x0, 5  -> x11 = 5
- Instruction 2: ADDI x12, x0, 6  -> x12 = 6
---------------------------------------------------
- Instruction 3: ADD  x13, x11, x12 -> x13 = 11 (SUM)
+ Time: 0 ns | PC: 00000000 | Instr: 00000513 
+ Time: 5 ns | PC: 00000004 | Instr: 00500093 
+ ...
 ==================================================
+ SUCCESS: All 37 Instructions Passed!
+==================================================
+
