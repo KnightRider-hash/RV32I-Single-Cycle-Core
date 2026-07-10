@@ -25,10 +25,10 @@ module instr_mem(
     output reg [31:0] instr 
   );
   
-   reg [31:0] rom [31:0];
+   reg [31:0] rom [255:0];
   initial
   begin
-   $readmemh("C:/Users/gopan/Control unit/test.hex",rom);
+   $readmemh("C:/Users/gopan/Control unit/pain.hex",rom);
   end
   always@(*) begin
   
