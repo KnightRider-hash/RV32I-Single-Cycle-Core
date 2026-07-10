@@ -18,7 +18,7 @@
 // Additional Comments:
 // 
 
-module top2(
+module top(
     input clk,
     input rst
 );
