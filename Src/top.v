@@ -17,12 +17,11 @@
 // Revision 0.01 - File Created
 // Additional Comments:
 // 
-//////////////////////////////////////////////////////////////////////////////////
-module top(
+
+module top2(
     input clk,
     input rst
 );
-
 
     // --- Program Counter & Memory Wires ---
     wire [31:0] pc_current;
@@ -32,31 +31,41 @@ module top(
     wire       reg_write, alu_src, mem_read, mem_write, branch, jump;
     wire [1:0] result_src, imm_src, alu_op;
     wire [3:0] alu_control;
-    wire       pc_src; // The final wire that tells the PC to jump
+    wire       pc_src;
     
     // --- Datapath Wires ---
     wire [31:0] imm_ext;
-    wire [31:0] rd1, rd2;       // Outputs from Register File
-    wire [31:0] alu_in_b;       // Input B into the ALU
-    wire [31:0] alu_result;     // Output from ALU
-    wire        zero_flag;      // Zero flag from ALU
-    wire [31:0] read_data;      // Output from Data RAM
-    wire [31:0] result_wire;    // The final data going back to the Register File
-
-
-   
-assign pc_src = jump | (branch & zero_flag);
-
-assign alu_in_b = (alu_src==1)? imm_ext:rd2;
-
-assign result_wire =(result_src==1)?read_data:
-                    (result_src == 2'b10)?(pc_current + 32'd4):alu_result; // to do everything in single cycle pc+4 needed
+    wire [31:0] rd1, rd2;       
+    wire [31:0] alu_in_b;
+    wire [31:0] alu_result;     
+    wire        zero_flag;      
+    wire [31:0] read_data;      // Formatted data coming OUT of RAM (via load_ext)
+    wire [31:0] result_wire;    // The final data entering the Register File
     
+    // --- Memory Wires ---
+    wire [31:0] ram_read_data;  // Raw 32-bit data directly out of RAM
+    wire [3:0]  M;              // Memory write mask from sw.v
+    wire [31:0] o;              // Formatted data from sw.v going INTO RAM
+
+    // --- Datapath Assignments ---
+    // --- Branch Evaluation Logic ---
+    wire take_branch = branch & (
+        (instr[14:12] == 3'b000 & zero_flag == 1'b1) |  // BEQ: Branch if Equal
+        (instr[14:12] == 3'b001 & zero_flag == 1'b0)    // BNE: Branch if Not Equal
+    );
+    
+    assign pc_src = jump | take_branch;
+    assign alu_in_b = (alu_src == 1'b1) ? imm_ext : rd2;
+
+    // Result Multiplexer (00: ALU, 01: Memory, 10: PC+4)
+    assign result_wire = (result_src == 2'b01) ? read_data :
+                         (result_src == 2'b10) ? (pc_current + 32'd4) : alu_result; 
+
     // 1. Program Counter
     pc program_counter (
         .clk(clk),
         .rst(rst),
-        .pcsrc(pc_src),       // Connected to our Branch Logic gate!
+        .pcsrc(pc_src),       
         .imm(imm_ext),
         .adr(pc_current)
     );
@@ -85,13 +94,13 @@ assign result_wire =(result_src==1)?read_data:
     );
 
     // 4. Register File
-   registers Register (
+    registers Register (
         .clk(clk),
-        .rd(reg_write),         // Write Enable from CU
-        .src1(instr[19:15]),    // rs1 address
-        .src2(instr[24:20]),    // rs2 address
-        .dest(instr[11:7]),     // rd address (Destination)
-        .rs(result_wire),       // Write Data (From our Result MUX)
+        .rd(reg_write),         
+        .src1(instr[19:15]),    
+        .src2(instr[24:20]),    
+        .dest(instr[11:7]),     
+        .rs(result_wire),       
         .data1(rd1),
         .data2(rd2)
     );
@@ -106,22 +115,39 @@ assign result_wire =(result_src==1)?read_data:
     // 6. ALU
     ALU_n_bit #(.n(31)) alu (
         .A(rd1),
-        .B(alu_in_b),           // Comes from the ALU Source MUX
+        .B(alu_in_b),           
         .OP(alu_control),
         .z(zero_flag),
-        .c(),                   // Leaving blank because RISC-V branches don't use carry!
-        .negative(),            // Leaving blank
+        .c(),                   
+        .negative(),            
         .out(alu_result)
     );
 
-    // 7. Data Memory (RAM)
+    // 7. Store Logic (Formats data going INTO RAM for SB, SH, SW)
+    sw store_logic(
+        .dat_in(rd2),                  
+        .funct3(instr[14:12]),         
+        .aluo(alu_result[1:0]),        
+        .out(o),           
+        .mask(M)                       
+    );
+
+    // 8. Data Memory (RAM)
     ram data_memory (
         .clk(clk),
         .memrd(mem_read),
-        .memwr(mem_write),
-        .adr(alu_result),       // ALU calculates the memory address
-        .dain(rd2),             // Data to store comes straight from Register 2
-        .daout(read_data)
+        .mask({4{mem_write}} & M),     // Only apply the mask if mem_write is high!
+        .adr(alu_result),        
+        .dain(o),                      
+        .daout(ram_read_data)    
+    );
+
+    // 9. Load Extension (Formats data coming OUT of RAM for LB, LH, LW, LBU, LHU)
+    load_ext load_formatter(
+        .ram_in(ram_read_data),
+        .funct3(instr[14:12]),
+        .aluo(alu_result[1:0]),
+        .reg_out(read_data)
     );
 
 endmodule
