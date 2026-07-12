@@ -33,6 +33,6 @@ The CPU has been strictly verified using Vivado Behavioral Simulation. The verif
  Time: 5 ns | PC: 00000004 | Instr: 00500093 
  ...
 ==================================================
- SUCCESS: All 37 Instructions Passed!
+
 ==================================================
 
