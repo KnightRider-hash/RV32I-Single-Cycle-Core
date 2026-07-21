@@ -39,7 +39,11 @@ The complete RTL design (RV32I Core + UART) has been successfully synthesized an
 ### Prototype Demonstration
 *(Below is the serial output of the RISC-V core executing a memory-mapped assembly loop and transmitting characters via the physical UART TX pin)*
 
-<video src="./Doc/testing.mp4" width="600" controls></video>
+
+
+https://github.com/user-attachments/assets/e4011dca-f055-400e-b63b-c8553ec0df20
+
+
 
 ## 🚀 Simulation & Verification
 Prior to synthesis, the CPU is being strictly verified using Vivado Behavioral Simulation. The verification environment utilizes a self-checking assembly program (`test.S`) to validate instructions. Currently, all instructions are undergoing testing, with major instructions fully verified. 
