@@ -12,8 +12,10 @@ This core follows a classic single-cycle architecture. Every instruction is fetc
 * **Hardware Description Language:** Verilog (IEEE 1364-2005)
 * **Target Hardware:** Gowin Tang Primer 25K (FPGA)
 
-### Supported Instructions (Verified)
-The current Control Unit and Datapath support the complete RV32I base integer instruction set (37 instructions):
+### Supported Instructions (In Verification Phase)
+The current Control Unit and Datapath are designed to support the complete RV32I base integer instruction set (37 instructions). **Verification is currently ongoing, with 7 major instructions fully verified in simulation and hardware so far.**
+
+The full planned instruction set being actively verified includes:
 * **R-Type (Register-Register):** `add`, `sub`, `sll`, `slt`, `sltu`, `xor`, `srl`, `sra`, `or`, `and`
 * **I-Type (Register-Immediate):** `addi`, `slti`, `sltiu`, `xori`, `ori`, `andi`, `slli`, `srli`, `srai`
 * **Load/Store Memory:** `lb`, `lh`, `lw`, `lbu`, `lhu`, `sb`, `sh`, `sw`
@@ -23,14 +25,14 @@ The current Control Unit and Datapath support the complete RV32I base integer in
 ---
 
 ## 🔌 SoC & Peripheral Integration
-To interface with external hardware, the base CPU was expanded to support a custom **UART Transmitter (TX)** peripheral.
-* **MMIO Implementation:** The UART TX module is mapped directly to the core's memory interface, allowing the CPU to transmit data using standard `store` instructions.
+To interface with external hardware, the base CPU was expanded to support a custom **Universal Asynchronous Receiver-Transmitter (UART)** peripheral.
+* **MMIO Implementation:** The UART is mapped directly to the core's memory interface, allowing the CPU to transmit data using standard `store` instructions.
 * **Hardware/Software Co-Design:** Successfully executed a custom bare-metal assembly program that polls the UART's `tx_ready` status register to continuously transmit the string `"Rider\r\n"` to a serial terminal.
 
 ---
 
 ## ⚡ Hardware Prototyping & Silicon Validation
-The complete RTL design (RV32I Core + UART TX) has been successfully synthesized and deployed to physical hardware to validate timing and logic gate utilization.
+The complete RTL design (RV32I Core + UART) has been successfully synthesized and deployed to physical hardware to validate timing and logic gate utilization.
 
 **Hardware Stack:** Gowin Tang Primer 25K FPGA
 
@@ -40,15 +42,14 @@ The complete RTL design (RV32I Core + UART TX) has been successfully synthesized
 <video src="./docs/testing.mp4" width="600" controls></video>
 
 ### Board Setup & Logic Analysis
-<div style="display: flex; gap: 10px;">
-  <img src="./docs/FPGA.jpeg" alt="Setup" width="400"/>
-  <img src="./docs/Terminal_result.jpeg" alt="Terminal Output" width="400"/>
-</div>
+
 
 ---
 
 ## 🚀 Simulation & Verification
-Prior to synthesis, the CPU was strictly verified using Vivado Behavioral Simulation. The verification environment utilizes a self-checking assembly program (`test.S`) that validates all 37 instructions sequentially. 
+Prior to synthesis, the CPU is being strictly verified using Vivado Behavioral Simulation. The verification environment utilizes a self-checking assembly program (`test.S`) to validate instructions. Currently, all instructions are undergoing testing, with major instructions fully verified. 
+
+![Waveform Screenshot](./docs/waveform_sim.jpeg) 
 
 **Example Console Output (Self-Checking Testbench):**
 ```text
@@ -57,5 +58,22 @@ Prior to synthesis, the CPU was strictly verified using Vivado Behavioral Simula
 ==================================================
  Time: 0 ns | PC: 00000000 | Instr: 00000513 
  Time: 5 ns | PC: 00000004 | Instr: 00500093 
- ...
+ Time: 10 ns | PC: 00000008 | Instr: 00500113 
+ Time: 15 ns | PC: 0000000C | Instr: 02209463 
+ Time: 20 ns | PC: 00000010 | Instr: 002081B3 
+ Time: 25 ns | PC: 00000014 | Instr: 00A00213 
+ Time: 30 ns | PC: 00000018 | Instr: 02419263 
+ Time: 35 ns | PC: 0000001C | Instr: 00100293 
+ Time: 40 ns | PC: 00000020 | Instr: 00429313 
+ Time: 45 ns | PC: 00000024 | Instr: 01000393 
+ Time: 50 ns | PC: 00000028 | Instr: 00731E63 
+ Time: 55 ns | PC: 0000002C | Instr: 3E700513 
+ Time: 60 ns | PC: 00000030 | Instr: 01C0006F 
+ Time: 65 ns | PC: 00000034 | Instr: 00100513 
+ Time: 70 ns | PC: 00000038 | Instr: 0140006F 
+ Time: 75 ns | PC: 0000003C | Instr: 00200513 
+ Time: 80 ns | PC: 00000040 | Instr: 00C0006F 
+ Time: 85 ns | PC: 00000044 | Instr: 00300513 
+ Time: 90 ns | PC: 00000048 | Instr: 0040006F 
+ Time: 95 ns | PC: 0000004C | Instr: 0000006F 
 ==================================================
