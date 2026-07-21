@@ -41,15 +41,9 @@ The complete RTL design (RV32I Core + UART) has been successfully synthesized an
 
 <video src="./Doc/testing.mp4" width="600" controls></video>
 
-### Board Setup & Logic Analysis
-
-
----
-
 ## 🚀 Simulation & Verification
 Prior to synthesis, the CPU is being strictly verified using Vivado Behavioral Simulation. The verification environment utilizes a self-checking assembly program (`test.S`) to validate instructions. Currently, all instructions are undergoing testing, with major instructions fully verified. 
 
-![Waveform Screenshot](./docs/waveform_sim.jpeg) 
 
 **Example Console Output (Self-Checking Testbench):**
 ```text
