@@ -28,7 +28,7 @@ input clk,
 input [31:0] adr,
 output reg [31:0] daout);
 
- reg [31:0] store [0:2047]; //just size increment for more support
+ reg [31:0] store [0:2047]; //just size increment for more support if any issue like runout of lut use 255 or any.
 
 always@(*)
  begin
