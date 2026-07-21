@@ -39,7 +39,7 @@ The complete RTL design (RV32I Core + UART) has been successfully synthesized an
 ### Prototype Demonstration
 *(Below is the serial output of the RISC-V core executing a memory-mapped assembly loop and transmitting characters via the physical UART TX pin)*
 
-<video src="./docs/testing.mp4" width="600" controls></video>
+<video src="./Doc/testing.mp4" width="600" controls></video>
 
 ### Board Setup & Logic Analysis
 
