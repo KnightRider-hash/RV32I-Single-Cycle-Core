@@ -1,26 +1,9 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 14.06.2026 19:53:39
-// Design Name: 
-// Module Name: top
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
 
 module top(
     input clk,
-    input rst
+    input rst,
+    output tx
 );
 
     // --- Program Counter & Memory Wires ---
@@ -28,17 +11,17 @@ module top(
     wire [31:0] instr;
     
     // --- Control Unit Wires ---
-    wire       reg_write, alu_src, mem_read, mem_write, branch, jump;
-    wire [1:0] result_src, imm_src, alu_op;
-    wire [3:0] alu_control;
-    wire       pc_src;
+    wire        reg_write, alu_src, mem_read, mem_write, pc_src;
+    wire [1:0]  result_src, imm_src, alu_op;
+    wire [3:0]  alu_control;
+    wire        forward_pc, jalr_sel;
     
     // --- Datapath Wires ---
     wire [31:0] imm_ext;
     wire [31:0] rd1, rd2;       
     wire [31:0] alu_in_b;
     wire [31:0] alu_result;     
-    wire        zero_flag;      
+    wire        zero_flag, carry_flag, negative_flag;      
     wire [31:0] read_data;      // Formatted data coming OUT of RAM (via load_ext)
     wire [31:0] result_wire;    // The final data entering the Register File
     
@@ -47,14 +30,12 @@ module top(
     wire [3:0]  M;              // Memory write mask from sw.v
     wire [31:0] o;              // Formatted data from sw.v going INTO RAM
 
+    // --- UART & Memory-Mapped I/O Wires ---
+    wire uart_A = (alu_result == 32'h0000_2000); // Address match for UART TX
+    wire uart_t = mem_write & uart_A;            // Enable UART write
+    wire ram_t  = mem_write & ~uart_A;           // Enable RAM write
+
     // --- Datapath Assignments ---
-    // --- Branch Evaluation Logic ---
-    wire take_branch = branch & (
-        (instr[14:12] == 3'b000 & zero_flag == 1'b1) |  // BEQ: Branch if Equal
-        (instr[14:12] == 3'b001 & zero_flag == 1'b0)    // BNE: Branch if Not Equal
-    );
-    
-    assign pc_src = jump | take_branch;
     assign alu_in_b = (alu_src == 1'b1) ? imm_ext : rd2;
 
     // Result Multiplexer (00: ALU, 01: Memory, 10: PC+4)
@@ -65,7 +46,7 @@ module top(
     pc program_counter (
         .clk(clk),
         .rst(rst),
-        .pcsrc(pc_src),       
+        .pcsrc(pc_src),        
         .imm(imm_ext),
         .adr(pc_current)
     );
@@ -81,16 +62,24 @@ module top(
         .opcode(instr[6:0]),
         .funct3(instr[14:12]),
         .funct7(instr[30]),
+        
+        // ALU Flag Inputs
+        .zero(zero_flag),
+        .negative(negative_flag),
+        .carry(carry_flag),
+        
+        // Outputs
         .Rgwrite(reg_write),
-        .branch(branch),
+        .pc_src(pc_src),
         .alusrc(alu_src),
         .memread(mem_read),
         .memwrite(mem_write),
-        .jump(jump),
         .memtreg(result_src),
         .aluop(alu_op),
         .immsrc(imm_src),
-        .op(alu_control)
+        .op(alu_control),
+        .forward_pc(forward_pc),
+        .jalr_sel(jalr_sel)
     );
 
     // 4. Register File
@@ -113,13 +102,13 @@ module top(
     );
 
     // 6. ALU
-    ALU_n_bit #(.n(31)) alu (
+    ALU_2_bit #(.n(31)) alu (
         .A(rd1),
-        .B(alu_in_b),           
+        .B(alu_in_b),            
         .OP(alu_control),
         .z(zero_flag),
-        .c(),                   
-        .negative(),            
+        .c(carry_flag),                    
+        .negative(negative_flag),            
         .out(alu_result)
     );
 
@@ -128,7 +117,7 @@ module top(
         .dat_in(rd2),                  
         .funct3(instr[14:12]),         
         .aluo(alu_result[1:0]),        
-        .out(o),           
+        .out(o),            
         .mask(M)                       
     );
 
@@ -136,13 +125,13 @@ module top(
     ram data_memory (
         .clk(clk),
         .memrd(mem_read),
-        .mask({4{mem_write}} & M),     // Only apply the mask if mem_write is high!
+        .mask({4{ram_t}} & M),  // Mask applied only when writing to RAM address space
         .adr(alu_result),        
         .dain(o),                      
         .daout(ram_read_data)    
     );
 
-    // 9. Load Extension (Formats data coming OUT of RAM for LB, LH, LW, LBU, LHU)
+    // 9. Load Extension
     load_ext load_formatter(
         .ram_in(ram_read_data),
         .funct3(instr[14:12]),
@@ -150,6 +139,13 @@ module top(
         .reg_out(read_data)
     );
 
+    // 10. UART Transmitter
+    UART uart_transmitter (
+        .clk(clk),
+        .data_in(rd2[7:0]),  // Transmit byte from rd2
+        .start(uart_t),      // Triggered on store to 0x00002000
+        .busy(),             
+        .daout(tx)      
+    );
+
 endmodule
-
-
