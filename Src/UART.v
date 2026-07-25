@@ -27,14 +27,12 @@ always@(posedge clk)begin
 
 if (acc >= (CLK_FREQ - BAUD_RATE)) begin 
     
-    // The exact equation you just wrote!
-    acc <= acc - CLK_FREQ + BAUD_RATE; 
+    acc <= acc - CLK_FREQ + BAUD_RATE; //for bring it to the range 
     Tick <= 1'b1;
     
 end else begin
     
-    // Normal cycle, just keep pouring
-    acc <= acc + BAUD_RATE;
+    acc <= acc + BAUD_RATE;//keeps adding 
     Tick <= 1'b0;
     
 end
