@@ -73,8 +73,8 @@ module Cu(
                 3'b001: pc_src = ~zero;         // BNE
                 3'b100: pc_src = negative;      // BLT
                 3'b101: pc_src = ~negative;     // BGE
-                3'b110: pc_src = ~carry;        // BLTU
-                3'b111: pc_src = carry;         // BGEU
+                3'b110: pc_src = carry;        // BLTU
+                3'b111: pc_src = ~carry;         // BGEU
                 default: pc_src = 1'b0;
             endcase
         end
@@ -85,7 +85,7 @@ module Cu(
             immsrc = 2'b11;
         end
         
-        7'b0010111: begin   // U-type (AUIPC) - Added this for you!
+        7'b0010111: begin   // U-type (AUIPC) 
             Rgwrite = 1'b1;
             alusrc = 1'b1;
             immsrc = 2'b11;
