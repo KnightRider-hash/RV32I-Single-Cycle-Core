@@ -36,7 +36,8 @@ module top(
     wire ram_t  = mem_write & ~uart_A;           // Enable RAM write
 
     // --- Datapath Assignments ---
-    assign alu_in_b = (alu_src == 1'b1) ? imm_ext : rd2;
+    wire [31:0] alu_in_a = forward_pc ? pc_current : rd1; // select alu A btw pc and register
+    assign alu_in_b = (alu_src == 1'b1) ? imm_ext : rd2;  // select alu B btw imm and register
 
     // Result Multiplexer (00: ALU, 01: Memory, 10: PC+4)
     assign result_wire = (result_src == 2'b01) ? read_data :
@@ -103,7 +104,7 @@ module top(
 
     // 6. ALU
     ALU_2_bit #(.n(31)) alu (
-        .A(rd1),
+        .A(alu_in_a),
         .B(alu_in_b),            
         .OP(alu_control),
         .z(zero_flag),
