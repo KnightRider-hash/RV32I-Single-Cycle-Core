@@ -1,5 +1,3 @@
-`timescale 1ns / 1ps
-
 module top(
     input clk,
     input rst,
@@ -34,12 +32,19 @@ module top(
     wire uart_A = (alu_result == 32'h0000_2000); // Address match for UART TX
     wire uart_t = mem_write & uart_A;            // Enable UART write
     wire ram_t  = mem_write & ~uart_A;           // Enable RAM write
+    wire uart_busy;
+    
+    // NEW: Map UART busy status to 0x00002004
+    wire uart_status_A = (alu_result == 32'h0000_2004); 
+    wire [31:0] io_read_data = uart_status_A ? {31'b0, uart_busy} : read_data;
 
     // --- Datapath Assignments ---
+    wire [31:0] alu_in_a = forward_pc ? pc_current : rd1; // select alu A btw pc and register
     assign alu_in_b = (alu_src == 1'b1) ? imm_ext : rd2;
 
     // Result Multiplexer (00: ALU, 01: Memory, 10: PC+4)
-    assign result_wire = (result_src == 2'b01) ? read_data :
+    // UPDATED: Use io_read_data instead of read_data to allow reading the busy flag
+    assign result_wire = (result_src == 2'b01) ? io_read_data :
                          (result_src == 2'b10) ? (pc_current + 32'd4) : alu_result; 
 
     // 1. Program Counter
@@ -103,7 +108,7 @@ module top(
 
     // 6. ALU
     ALU_2_bit #(.n(31)) alu (
-        .A(rd1),
+        .A(alu_in_a),
         .B(alu_in_b),            
         .OP(alu_control),
         .z(zero_flag),
@@ -144,7 +149,7 @@ module top(
         .clk(clk),
         .data_in(rd2[7:0]),  // Transmit byte from rd2
         .start(uart_t),      // Triggered on store to 0x00002000
-        .busy(),             
+        .busy(uart_busy),              
         .daout(tx)      
     );
 
