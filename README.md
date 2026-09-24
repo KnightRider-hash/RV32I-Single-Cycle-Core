@@ -41,7 +41,6 @@ The complete RTL design (RV32I Core + UART) has been successfully synthesized an
 
 
 
-https://github.com/user-attachments/assets/e4011dca-f055-400e-b63b-c8553ec0df20
 
 
 
