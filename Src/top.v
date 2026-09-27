@@ -39,7 +39,10 @@ module top(
     wire [31:0] io_read_data = uart_status_A ? {31'b0, uart_busy} : read_data;
 
     // --- Datapath Assignments ---
-    wire [31:0] alu_in_a = forward_pc ? pc_current : rd1; // select alu A btw pc and register
+    // Detect LUI opcode (0110111) to force ALU input A to 0
+    wire is_lui = (instr[6:0] == 7'b0110111);
+    wire [31:0] alu_in_a = is_lui ? 32'b0 : (forward_pc ? pc_current : rd1);
+    
     assign alu_in_b = (alu_src == 1'b1) ? imm_ext : rd2;
 
     // Result Multiplexer (00: ALU, 01: Memory, 10: PC+4)
@@ -52,6 +55,8 @@ module top(
         .clk(clk),
         .rst(rst),
         .pcsrc(pc_src),        
+        .jalr_sel(jalr_sel),     
+        .alu_result(alu_result), 
         .imm(imm_ext),
         .adr(pc_current)
     );
