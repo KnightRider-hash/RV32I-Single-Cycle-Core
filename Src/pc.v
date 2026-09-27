@@ -1,41 +1,25 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 30.05.2026 19:10:38
-// Design Name: 
-// Module Name: pc
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
 
 module pc(
     input clk,
     input pcsrc,
+    input jalr_sel,          // NEW: Signal from Control Unit
     input rst,
     input [31:0] imm,
+    input [31:0] alu_result, // NEW: Calculated target address from ALU
     output reg [31:0] adr
 );
-initial
-adr=32'b0;
-always@(posedge clk)begin
- if(rst==1'b1)
-  adr<=32'b0;
- else if(pcsrc==1'b1)
-  adr<=adr + imm;
- else
-  adr<=adr + 3'b100;
- end 
- endmodule  
 
+    initial adr = 32'b0;
+
+    always @(posedge clk) begin
+        if (rst == 1'b1)
+            adr <= 32'b0;
+        else if (jalr_sel == 1'b1)
+            adr <= alu_result;  // JALR requires the ALU's exact calculation (rs1 + imm)
+        else if (pcsrc == 1'b1)
+            adr <= adr + imm;   // Branches and JAL use relative offset (PC + imm)
+        else
+            adr <= adr + 32'd4; // Normal execution
+    end 
+endmodule
